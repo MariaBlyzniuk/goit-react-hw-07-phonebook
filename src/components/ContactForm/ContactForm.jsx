@@ -1,17 +1,15 @@
 import React, { useState } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-// import actions from '../../redux/phonebook/actions';
-// import { getContacts } from '../../redux/phonebook/selectors';
-import Notiflix from 'notiflix';
-import { operations, selectors } from 'redux/phonebook';
+import { useAddContactMutation, useGetContactsQuery,
+} from 'services/contactsApi';
 import { FormStyle, Label, Input, Button } from './ContactForm.styled';
 
 export function ContactForm() {
-    const dispatch = useDispatch();
-    // const contacts = useSelector(getContacts);
-    const contacts = useSelector(selectors.getContacts);
+
     const [name, setName] = useState('');
-    const [number, setNumber] = useState('');
+    const [phone, setNumber] = useState('');
+
+    const [addContact] = useAddContactMutation();
+    const { data: contacts } = useGetContactsQuery();
 
     const handleInputChange = e => {
         const { name, value } = e.currentTarget;
@@ -21,7 +19,7 @@ export function ContactForm() {
                 setName(value);
                 break;
 
-            case 'number':
+            case 'phone':
                 setNumber(value);
                 break;
 
@@ -32,13 +30,14 @@ export function ContactForm() {
 
     const handleSubmit = e => {
         e.preventDefault();
-        if (name === '' && number === '') {
-        alert('Заполните все поля контакта');
-        return;
+        if (
+        contacts.find(
+        contact => contact.name.toLowerCase() === name.toLowerCase()
+        )
+    ) {
+        return alert(`Contact ${name} is already exist`);
     }
-    contacts.find(contact => name.toLowerCase() === contact.name.toLowerCase())
-        ? Notiflix.Report.failure(`${name} is already in contacts`)
-        : dispatch(operations.addContact({ name, number }));
+    addContact({ name, phone });
     reset();
     };
     
@@ -67,8 +66,8 @@ export function ContactForm() {
                 <Input
             
                     type="tel"
-                    name="number"
-                    value={number}
+                    name="phone"
+                    value={phone}
                     onChange={handleInputChange}
                     placeholder="+380(11)-111-11-11"
                     pattern="\+?\d{1,4}?[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}"

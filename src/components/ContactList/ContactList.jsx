@@ -1,48 +1,42 @@
-import React, { useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { operations, selectors } from 'redux/phonebook';
-// import actions from 'redux/phonebook/actions';
-// import { getVisibleContacts } from 'redux/phonebook/selectors';
-import PropTypes from 'prop-types';
-import { ContactListStyle, ContactText, ContactButton, ContactItem } from './ContactList.styled';
+import { useSelector} from 'react-redux';
+import { useGetContactsQuery } from 'services/contactsApi';
+import ContactListItem from './ContactListItem';
+import { getFilter } from 'redux/contacts/selectors';
+import { ContactListStyle} from './ContactList.styled';
 
-export const ContactList = () => {
-    const contacts = useSelector(selectors.getVisibleContacts);
+export function ContactList() {
+  const { data: contacts, isLoading, isError } = useGetContactsQuery();
+  const filter = useSelector(getFilter);
+  const normalizedData = filter && filter.toLowerCase();
+  const normalizedContacts =
+    contacts &&
+    contacts.filter(contact =>
+      contact.name.toLowerCase().includes(normalizedData)
+    );
 
-    const dispatch = useDispatch();
+  const isContacts = normalizedContacts && normalizedContacts.length > 0;
 
-    const onDeleteContact = id => {
-    dispatch(operations.deleteContact(id));
-    };
-
-    useEffect(() => {
-    dispatch(operations.fetchContacts());
-    // eslint-disable-next-line
-    }, [dispatch]);
-    
-    return (
+  return (
+    <>
+      {isLoading && <p>Loading ...</p>}
+      {isError && <p>An error has occurred!</p>}
+      {isContacts && (
         <ContactListStyle>
-    {contacts.map(({ id, name, number }) => (
-        <ContactItem key={id}>
-        <ContactText >
-            {name}: {number}
-        </ContactText>
-        <ContactButton
-            type="button"
-            onClick={() => onDeleteContact(id)}
-        >Delete</ContactButton>
-        </ContactItem>
-    ))}
-    </ContactListStyle>
-    )
+          {normalizedContacts.map(({ id, name, phone: number }) => (
+            <ContactListItem name={name} number={number} key={id} id={id} />
+          ))}
+        </ContactListStyle>
+      )}
+    </>
+  );
 }
 
-ContactList.propTypes = {
-    contacts: PropTypes.arrayOf(
-    PropTypes.shape({
-        id: PropTypes.string,
-        name: PropTypes.string,
-        number: PropTypes.string,
-    }),
-    ),
-};
+// ContactList.propTypes = {
+//     contacts: PropTypes.arrayOf(
+//     PropTypes.shape({
+//         id: PropTypes.string,
+//         name: PropTypes.string,
+//         number: PropTypes.string,
+//     }),
+//     ),
+// };
