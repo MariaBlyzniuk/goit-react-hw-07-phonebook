@@ -1,42 +1,47 @@
-import { useSelector} from 'react-redux';
-import { useGetContactsQuery } from 'services/contactsApi';
-import ContactListItem from './ContactListItem';
-import { getFilter } from 'redux/contacts/selectors';
-import { ContactListStyle} from './ContactList.styled';
+import { useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { getVisibleContacts, getFilter, getIsLoading,getContacts  } from 'redux/contacts/selectors';
+import PropTypes from 'prop-types';
+import { ContactListStyle, ContactText, ContactButton, ContactItem } from './ContactList.styled';
+import { deleteContact } from 'redux/contacts/operations';
 
-export function ContactList() {
-  const { data: contacts, isLoading, isError } = useGetContactsQuery();
-  const filter = useSelector(getFilter);
-  const normalizedData = filter && filter.toLowerCase();
-  const normalizedContacts =
-    contacts &&
-    contacts.filter(contact =>
-      contact.name.toLowerCase().includes(normalizedData)
-    );
 
-  const isContacts = normalizedContacts && normalizedContacts.length > 0;
+export const ContactList = () => {
+    const contacts = useSelector(getContacts);
+    const filter = useSelector(getFilter);
+    const dispatch = useDispatch();
+    const isLoading = useSelector(getIsLoading);
+    const [deleteID, setDeleteId] = useState(null)
 
-  return (
-    <>
-      {isLoading && <p>Loading ...</p>}
-      {isError && <p>An error has occurred!</p>}
-      {isContacts && (
+    const onDeleteContact = contactId => {
+        setDeleteId(contactId)
+        dispatch(deleteContact(contactId));
+    };
+
+    return (
         <ContactListStyle>
-          {normalizedContacts.map(({ id, name, phone: number }) => (
-            <ContactListItem name={name} number={number} key={id} id={id} />
-          ))}
-        </ContactListStyle>
-      )}
-    </>
-  );
+    {getVisibleContacts(contacts, filter).map(({ id, name, phone  }) => (
+        <ContactItem key={id}>
+        <ContactText >
+            {name}:  {phone }
+        </ContactText>
+        <ContactButton
+            type="button"
+                onClick={() => onDeleteContact(id)}
+                disabled={isLoading && deleteID === id}
+        >{isLoading && deleteID === id ? 'Deleting' : 'Delete'}</ContactButton>
+        </ContactItem>
+    ))}
+    </ContactListStyle>
+    )
 }
 
-// ContactList.propTypes = {
-//     contacts: PropTypes.arrayOf(
-//     PropTypes.shape({
-//         id: PropTypes.string,
-//         name: PropTypes.string,
-//         number: PropTypes.string,
-//     }),
-//     ),
-// };
+ContactList.propTypes = {
+    contacts: PropTypes.arrayOf(
+    PropTypes.shape({
+        id: PropTypes.string,
+        name: PropTypes.string,
+        number: PropTypes.string,
+    }),
+    ),
+};

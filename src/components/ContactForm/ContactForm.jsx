@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
-import { useAddContactMutation, useGetContactsQuery,
-} from 'services/contactsApi';
+import { useSelector, useDispatch } from 'react-redux';
+
+import Notiflix from 'notiflix';
 import { FormStyle, Label, Input, Button } from './ContactForm.styled';
+import { getContacts } from 'redux/contacts/selectors';
+import { addContact } from 'redux/contacts/operations';
+
 
 export function ContactForm() {
+    const dispatch = useDispatch();
+    const contacts = useSelector(getContacts);
 
     const [name, setName] = useState('');
-    const [phone, setNumber] = useState('');
-
-    const [addContact] = useAddContactMutation();
-    const { data: contacts } = useGetContactsQuery();
+    const [number, setNumber] = useState('');
 
     const handleInputChange = e => {
         const { name, value } = e.currentTarget;
@@ -19,7 +22,7 @@ export function ContactForm() {
                 setName(value);
                 break;
 
-            case 'phone':
+            case 'number':
                 setNumber(value);
                 break;
 
@@ -30,14 +33,13 @@ export function ContactForm() {
 
     const handleSubmit = e => {
         e.preventDefault();
-        if (
-        contacts.find(
-        contact => contact.name.toLowerCase() === name.toLowerCase()
-        )
-    ) {
-        return alert(`Contact ${name} is already exist`);
+        if (name === '' && number === '') {
+        alert('Заполните все поля контакта');
+        return;
     }
-    addContact({ name, phone });
+    contacts.find(contact => name.toLowerCase() === contact.name.toLowerCase())
+        ? Notiflix.Report.failure(`${name} is already in contacts`)
+        : dispatch(addContact({ name, phone: number }));
     reset();
     };
     
@@ -66,8 +68,8 @@ export function ContactForm() {
                 <Input
             
                     type="tel"
-                    name="phone"
-                    value={phone}
+                    name="number"
+                    value={number}
                     onChange={handleInputChange}
                     placeholder="+380(11)-111-11-11"
                     pattern="\+?\d{1,4}?[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}"
@@ -81,6 +83,3 @@ export function ContactForm() {
         </FormStyle>
     );
 }
-
-
-
